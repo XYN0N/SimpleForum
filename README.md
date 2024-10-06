@@ -28,6 +28,6 @@ CREATE TABLE posts (
 To access as administrator you will have to put your credentials in /admin/admin.json
 
 
-
+## PREVIEW
 ![image](https://github.com/user-attachments/assets/c701aa72-a0d0-4871-a59e-95999d33dd91)
 
