@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Darkness Forum</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: white;
+        }
+        header {
+            text-align: center;
+            position: relative;
+        }
+        header img {
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+        }
+        header h1 {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+        }
+        main {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        textarea, input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #admin-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        #admin-login {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+            padding: 10px;
+            z-index: 1000;
+        }
+        #admin-login input {
+            display: block;
+            margin: 5px 0;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px;
+        }
+        .rainbow-title {
+            animation: rainbow 3s linear infinite; /* Modificato a 3s per rallentare l'animazione */
+        }
+        @keyframes rainbow {
+            0% { color: red; }
+            14% { color: orange; }
+            28% { color: yellow; }
+            42% { color: green; }
+            57% { color: blue; }
+            71% { color: indigo; }
+            85% { color: violet; }
+            100% { color: red; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="images/banner.jpg" alt="Banner Image">
+        <h1>darkest.space Forum</h1>
+    </header>
+    <main>
+        <button id="admin-button">Admin</button>
+        <div id="admin-login">
+            <input type="text" id="admin-username" placeholder="Name" required>
+            <input type="password" id="admin-password" placeholder="Password" required>
+            <button id="admin-submit">Login</button>
+            <p id="admin-message"></p>
+        </div>
+        <section id="post-form">
+            <h2>Write a post</h2>
+            <form id="new-post-form">
+                <input type="text" id="post-title" placeholder="Title" required>
+                <textarea id="post-content" placeholder="Write here" required></textarea>
+                <button type="submit" id="submit-post">Send</button>
+            </form>
+        </section>
+        <section id="post-list">
+            <h2>Recent Post</h2>
+            <ul id="posts"></ul>
+        </section>
+    </main>
+    <script>
+        let isAdmin = false;
+
+        // Gestione dell'invio del form
+        document.getElementById('new-post-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Previeni il comportamento di invio predefinito
+
+            const title = document.getElementById('post-title').value;
+            const content = document.getElementById('post-content').value;
+            const submitButton = document.getElementById('submit-post');
+
+            // Disabilita il pulsante di invio per prevenire invii multipli
+            submitButton.disabled = true;
+
+            // Invia il nuovo post al server
+            fetch('php/post.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `title=${encodeURIComponent(title)}&content=${encodeURIComponent(content)}`
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Aggiungi il nuovo post all'elenco senza ricaricare la pagina
+                    const postList = document.getElementById('posts');
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong class="rainbow-title">${title}</strong><p>${content}</p><small>${new Date().toLocaleString()}</small>`;
+                    if (isAdmin) {
+                        li.innerHTML += `
+                            <div class="admin-buttons">
+                                <button class="pin-button" data-id="1">Pin</button>
+                                <button class="remove-button" data-id="1">Remove</button>
+                            </div>`;
+                    }
+                    postList.prepend(li); // Aggiungi il nuovo post all'inizio della lista
+                    // Resetta il form
+                    document.getElementById('new-post-form').reset();
+                } else {
+                    console.error('Errore durante l\'invio del post');
+                }
+            })
+            .catch(error => console.error('Errore nel caricamento dei post:', error))
+            .finally(() => {
+                // Riabilita il pulsante di invio
+                submitButton.disabled = false;
+            });
+        });
+
+        // Gestione del login admin
+        document.getElementById('admin-button').addEventListener('click', function() {
+            const adminLogin = document.getElementById('admin-login');
+            adminLogin.style.display = adminLogin.style.display === 'none' ? 'block' : 'none';
+        });
+
+        document.getElementById('admin-submit').addEventListener('click', function() {
+    const adminMessage = document.getElementById('admin-message');
+
+    // Carica le credenziali dal file JSON
+    fetch('admin/admin.json')
+        .then(response => response.json())
+        .then(data => {
+            const username = document.getElementById('admin-username').value;
+            const password = document.getElementById('admin-password').value;
+
+            if (username === data.username && password === data.password) {
+                isAdmin = true;
+                adminMessage.style.color = 'green';
+                adminMessage.textContent = 'Accesso effettuato!';
+                document.getElementById('admin-login').style.display = 'none';
+                loadPosts(); // Carica i post per mostrare i pulsanti admin
+            } else {
+                adminMessage.style.color = 'red';
+                adminMessage.textContent = 'Credenziali errate!';
+            }
+        })
+        .catch(error => {
+            console.error('Errore nel caricamento delle credenziali:', error);
+            adminMessage.style.color = 'red';
+            adminMessage.textContent = 'Errore nel caricamento delle credenziali!';
+        });
+});
+
+
+        // Funzione per gestire il pin e la rimozione dei post
+        document.getElementById('posts').addEventListener('click', function(event) {
+            if (event.target.classList.contains('pin-button')) {
+                const postId = event.target.getAttribute('data-id');
+                // Invia richiesta per pinare il post
+                fetch('php/pin_post.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: postId })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Post pinned!');
+                        loadPosts(); // Ricarica i post
+                    }
+                });
+            }
+
+            if (event.target.classList.contains('remove-button')) {
+                const postId = event.target.getAttribute('data-id');
+                // Invia richiesta per rimuovere il post
+                fetch('php/remove_post.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: postId })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Post rimosso con successo!');
+                        loadPosts(); // Ricarica i post
+                    }
+                });
+            }
+        });
+
+        // Carica i post dal server
+        function loadPosts() {
+            fetch('php/get_posts.php')
+                .then(response => response.json())
+                .then(posts => {
+                    const postList = document.getElementById('posts');
+                    postList.innerHTML = ''; // Pulisci la lista esistente
+
+                    // Filtra i post pinnati
+                    const pinnedPosts = posts.filter(post => post.pinned);
+                    const normalPosts = posts.filter(post => !post.pinned);
+
+                    // Aggiungi prima i post pinnati
+                    pinnedPosts.forEach(post => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong class="rainbow-title">${post.title} 📌</strong><p>${post.content}</p><small>${new Date(post.date).toLocaleString()}</small>`;
+                        if (isAdmin) {
+                            li.innerHTML += `
+                                <div class="admin-buttons">
+                                    <button class="pin-button" data-id="${post.id}">Pin</button>
+                                    <button class="remove-button" data-id="${post.id}">Rimuovi</button>
+                                </div>`;
+                        }
+                        postList.appendChild(li);
+                    });
+
+                    // Aggiungi i post normali
+                    normalPosts.forEach(post => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong class="rainbow-title">${post.title}</strong><p>${post.content}</p><small>${new Date(post.date).toLocaleString()}</small>`;
+                        if (isAdmin) {
+                            li.innerHTML += `
+                                <div class="admin-buttons">
+                                    <button class="pin-button" data-id="${post.id}">Pin</button>
+                                    <button class="remove-button" data-id="${post.id}">Rimuovi</button>
+                                </div>`;
+                        }
+                        postList.appendChild(li);
+                    });
+                })
+                .catch(error => console.error('Errore nel caricamento dei post:', error));
+        }
+
+        // Carica i post all'apertura della pagina
+        loadPosts();
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
