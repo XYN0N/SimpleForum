@@ -26,7 +26,7 @@ CREATE TABLE posts (
 
 ## Admin Configuration and settings
 To access as administrator you will have to put your credentials in /admin/admin.json
-You can also change the name of the Forum on index.html
+You can also change the name of the Forum on /forum/index.html
 
 
 ## PREVIEW
