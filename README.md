@@ -24,6 +24,9 @@ CREATE TABLE posts (
 );
 ```
 
+### Configuration
+Change Database information on /forum/php/config.php
+
 ## Admin Configuration and settings
 To access as administrator you will have to put your credentials in /admin/admin.json
 You can also change the name of the Forum on /forum/index.html
